@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
 
-// Definice typů
 type Produkt = {
   id: number;
   nazev: string;
   cena: number;
+  kategorie: "obleceni" | "elektronika" | "gadgety";
   popis: string;
+  emoji: string;
 };
 
 type KosikPolozka = {
@@ -15,19 +16,25 @@ type KosikPolozka = {
 };
 
 export default function Home() {
-  const [zalozka, setZalozka] = useState<"produkty" | "kosik">("produkty");
+  const [zalozka, setZalozka] = useState<"obchod" | "kosik">("obchod");
+  const [kategorie, setKategorie] = useState<"vse" | "obleceni" | "elektronika" | "gadgety">("vse");
   const [kosik, setKosik] = useState<KosikPolozka[]>([]);
+  const [animovanyId, setAnimovanyId] = useState<number | null>(null);
+  const [platbaProbehla, setPlatbaProbehla] = useState(false);
 
-  // Seznam nabízených produktů
   const produkty: Produkt[] = [
-    { id: 1, nazev: "Stylové tričko", cena: 490, popis: "100% bavlna, pohodlný střih." },
-    { id: 2, nazev: "Mikina s kapucí", cena: 1190, popis: "Teplá a příjemná na nošení." },
-    { id: 3, nazev: "Kšiltovka", cena: 350, popis: "Nastavitelná velikost, černá barva." },
-    { id: 4, nazev: "Ponožky 3 páry", cena: 190, popis: "Prodyšné sportovní ponožky." },
+    { id: 1, nazev: "Stylová mikina", cena: 1190, kategorie: "obleceni", popis: "Pohodlná bavlněná mikina s kapucí.", emoji: "🧥" },
+    { id: 2, nazev: "Oversize tričko", cena: 490, kategorie: "obleceni", popis: "Kvalitní gramáž, moderní střih.", emoji: "👕" },
+    { id: 3, nazev: "Bezdrátová sluchátka", cena: 1890, kategorie: "elektronika", popis: "Špičkový zvuk a potlačení hluku.", emoji: "🎧" },
+    { id: 4, nazev: "Chytré hodinky", cena: 3490, kategorie: "elektronika", popis: "Sledování aktivit a zdravotních funkcí.", emoji: "⌚" },
+    { id: 5, nazev: "Mini Dron 4K", cena: 4500, kategorie: "gadgety", popis: "Kompaktní dron s dlouhou výdrží baterie.", emoji: "🚁" },
+    { id: 6, nazev: "LED Páska RGB", cena: 390, kategorie: "gadgety", popis: "Chytré osvětlení ovládané přes aplikaci.", emoji: "💡" },
   ];
 
-  // Přidání do košíku
   const pridatDoKosiku = (produkt: Produkt) => {
+    setAnimovanyId(produkt.id);
+    setTimeout(() => setAnimovanyId(null), 600);
+
     setKosik((puvodni) => {
       const existuje = puvodni.find((p) => p.produkt.id === produkt.id);
       if (existuje) {
@@ -39,12 +46,6 @@ export default function Home() {
     });
   };
 
-  // Odebrání položky z košíku
-  const odebratZKosiku = (id: number) => {
-    setKosik((puvodni) => puvodni.filter((p) => p.produkt.id !== id));
-  };
-
-  // Změna počtu kusů
   const zmenitPocet = (id: number, zmena: number) => {
     setKosik((puvodni) =>
       puvodni
@@ -59,48 +60,111 @@ export default function Home() {
     );
   };
 
-  // Celková cena
   const celkovaCena = kosik.reduce((sum, p) => sum + p.produkt.cena * p.pocet, 0);
   const celkovyPocetKusu = kosik.reduce((sum, p) => sum + p.pocet, 0);
 
+  const filtrovaneProdukty = kategorie === "vse" 
+    ? produkty 
+    : produkty.filter((p) => p.kategorie === kategorie);
+
+  const zaplatit = () => {
+    setPlatbaProbehla(true);
+    setTimeout(() => {
+      setKosik([]);
+      setPlatbaProbehla(false);
+      setZalozka("obchod");
+      alert("Platba byla úspěšně zpracována! Děkujeme za nákup v Obchod pro tebe.");
+    }, 1500);
+  };
+
   return (
-    <div style={{ fontFamily: "sans-serif", backgroundColor: "#f3f4f6", minHeight: "100vh", margin: 0 }}>
-      {/* HORNÍ LIŠTA / NAVIGACE */}
-      <header style={{ backgroundColor: "#111827", color: "white", padding: "15px 30px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ margin: 0, fontSize: "22px" }}>Můj E-shop</h1>
-        <div style={{ display: "flex", gap: "15px" }}>
-          <button
-            onClick={() => setZalozka("produkty")}
-            style={{ background: "none", border: "none", color: zalozka === "produkty" ? "#3b82f6" : "white", cursor: "pointer", fontWeight: "bold", fontSize: "16px" }}
-          >
-            Produkty
+    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", backgroundColor: "#0f172a", color: "#f8fafc", minHeight: "100vh", margin: 0 }}>
+      <style>{`
+        @keyframes pop {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+          100% { transform: scale(1); }
+        }
+        .animatovat { animation: pop 0.4s ease-in-out; }
+        .karta { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .karta:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3); }
+        .tlacitko { transition: all 0.2s ease; }
+        .tlacitko:active { transform: scale(0.96); }
+      `}</style>
+
+      {/* HEADER */}
+      <header style={{ backgroundColor: "#1e293b", borderBottom: "1px solid #334155", padding: "18px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", sticky: "top", position: "sticky", top: 0, zIndex: 100 }}>
+        <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "800", background: "linear-gradient(to right, #3b82f6, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          Obchod pro tebe
+        </h1>
+        <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+          <button onClick={() => setZalozka("obchod")} style={{ background: "none", border: "none", color: zalozka === "obchod" ? "#60a5fa" : "#94a3b8", cursor: "pointer", fontWeight: "600", fontSize: "16px" }}>
+            Obchod
           </button>
-          <button
-            onClick={() => setZalozka("kosik")}
-            style={{ background: "#2563eb", border: "none", color: "white", padding: "8px 16px", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
-          >
-            Košík ({celkovyPocetKusu})
+          <button onClick={() => setZalozka("kosik")} className={`tlacitko ${animovanyId ? "animatovat" : ""}`} style={{ backgroundColor: "#2563eb", color: "white", border: "none", padding: "10px 20px", borderRadius: "10px", cursor: "pointer", fontWeight: "700", display: "flex", alignItems: "center", gap: "8px" }}>
+            🛒 Košík ({celkovyPocetKusu})
           </button>
         </div>
       </header>
 
       {/* OBSAH */}
-      <main style={{ padding: "30px", maxWidth: "900px", margin: "0 auto" }}>
-        {zalozka === "produkty" && (
+      <main style={{ padding: "40px 20px", maxWidth: "1100px", margin: "0 auto" }}>
+        {zalozka === "obchod" && (
           <div>
-            <h2 style={{ marginBottom: "20px" }}>Katalog produktů</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
-              {produkty.map((produkt) => (
-                <div key={produkt.id} style={{ border: "1px solid #e5e7eb", borderRadius: "10px", padding: "20px", backgroundColor: "white", boxShadow: "0 2px 5px rgba(0,0,0,0.05)" }}>
-                  <h3 style={{ marginTop: 0 }}>{produkt.nazev}</h3>
-                  <p style={{ color: "#6b7280", fontSize: "14px" }}>{produkt.popis}</p>
-                  <p style={{ fontWeight: "bold", fontSize: "20px", color: "#10b981" }}>{produkt.cena} Kč</p>
-                  <button
-                    onClick={() => pridatDoKosiku(produkt)}
-                    style={{ width: "100%", padding: "10px", backgroundColor: "#2563eb", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
-                  >
-                    Pridat do košíku
-                  </button>
+            {/* KATEGORIE ZÁLOŽKY */}
+            <div style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
+              {[
+                { id: "vse", label: "Všechny produkty" },
+                { id: "obleceni", label: "👕 Oblečení" },
+                { id: "elektronika", label: "🎧 Elektronika" },
+                { id: "gadgety", label: "🚁 Gadgety" },
+              ].map((kat) => (
+                <button
+                  key={kat.id}
+                  onClick={() => setKategorie(kat.id as any)}
+                  style={{
+                    backgroundColor: kategorie === kat.id ? "#3b82f6" : "#1e293b",
+                    color: kategorie === kat.id ? "white" : "#94a3b8",
+                    border: "1px solid #334155",
+                    padding: "10px 20px",
+                    borderRadius: "20px",
+                    cursor: "pointer",
+                    fontWeight: "600"
+                  }}
+                >
+                  {kat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* KATALOG */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "25px" }}>
+              {filtrovaneProdukty.map((p) => (
+                <div key={p.id} className="karta" style={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: "16px", padding: "24px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: "48px", marginBottom: "15px" }}>{p.emoji}</div>
+                    <h3 style={{ margin: "0 0 8px 0", fontSize: "20px" }}>{p.nazev}</h3>
+                    <p style={{ color: "#94a3b8", fontSize: "14px", margin: "0 0 20px 0" }}>{p.popis}</p>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: "22px", fontWeight: "800", color: "#38bdf8", marginBottom: "15px" }}>{p.cena} Kč</div>
+                    <button
+                      onClick={() => pridatDoKosiku(p)}
+                      className={`tlacitko ${animovanyId === p.id ? "animatovat" : ""}`}
+                      style={{
+                        width: "100%",
+                        padding: "12px",
+                        backgroundColor: animovanyId === p.id ? "#10b981" : "#2563eb",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        fontWeight: "700"
+                      }}
+                    >
+                      {animovanyId === p.id ? "✓ Přidáno!" : "Přidat do košíku"}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -108,47 +172,59 @@ export default function Home() {
         )}
 
         {zalozka === "kosik" && (
-          <div>
-            <h2 style={{ marginBottom: "20px" }}>Nákupní košík</h2>
+          <div style={{ maxWidth: "700px", margin: "0 auto" }}>
+            <h2 style={{ fontSize: "28px", marginBottom: "25px" }}>Nákupní košík</h2>
             {kosik.length === 0 ? (
-              <div style={{ backgroundColor: "white", padding: "30px", borderRadius: "10px", textAlign: "center" }}>
-                <p style={{ fontSize: "18px", color: "#6b7280" }}>Váš košík je zatím prázdný.</p>
-                <button
-                  onClick={() => setZalozka("produkty")}
-                  style={{ backgroundColor: "#2563eb", color: "white", border: "none", padding: "10px 20px", borderRadius: "6px", cursor: "pointer" }}
-                >
+              <div style={{ backgroundColor: "#1e293b", padding: "40px", borderRadius: "16px", textAlign: "center", border: "1px solid #334155" }}>
+                <p style={{ color: "#94a3b8", fontSize: "18px" }}>Košík je prázdný.</p>
+                <button onClick={() => setZalozka("obchod")} style={{ backgroundColor: "#2563eb", color: "white", border: "none", padding: "12px 24px", borderRadius: "10px", cursor: "pointer", fontWeight: "600" }}>
                   Prohlédnout produkty
                 </button>
               </div>
             ) : (
-              <div style={{ backgroundColor: "white", padding: "20px", borderRadius: "10px", boxShadow: "0 2px 5px rgba(0,0,0,0.05)" }}>
-                {kosik.map((polozka) => (
-                  <div key={polozka.produkt.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f3f4f6", padding: "15px 0" }}>
+              <div style={{ backgroundColor: "#1e293b", padding: "30px", borderRadius: "16px", border: "1px solid #334155" }}>
+                {kosik.map((item) => (
+                  <div key={item.produkt.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #334155", padding: "15px 0" }}>
                     <div>
-                      <h4 style={{ margin: 0 }}>{polozka.produkt.nazev}</h4>
-                      <p style={{ margin: "5px 0 0 0", color: "#6b7280" }}>{polozka.produkt.cena} Kč / ks</p>
+                      <h4 style={{ margin: 0, fontSize: "18px" }}>{item.produkt.emoji} {item.produkt.nazev}</h4>
+                      <p style={{ margin: "4px 0 0 0", color: "#94a3b8" }}>{item.produkt.cena} Kč / ks</p>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <button onClick={() => zmenitPocet(polozka.produkt.id, -1)} style={{ padding: "5px 10px", cursor: "pointer" }}>-</button>
-                      <span><strong>{polozka.pocet}</strong> ks</span>
-                      <button onClick={() => zmenitPocet(polozka.produkt.id, 1)} style={{ padding: "5px 10px", cursor: "pointer" }}>+</button>
-                      <button
-                        onClick={() => odebratZKosiku(polozka.produkt.id)}
-                        style={{ backgroundColor: "#ef4444", color: "white", border: "none", padding: "6px 12px", borderRadius: "4px", cursor: "pointer", marginLeft: "10px" }}
-                      >
-                        Smazat
-                      </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <button onClick={() => zmenitPocet(item.produkt.id, -1)} style={{ backgroundColor: "#334155", color: "white", border: "none", width: "30px", height: "30px", borderRadius: "6px", cursor: "pointer" }}>-</button>
+                      <span style={{ fontWeight: "bold" }}>{item.pocet}</span>
+                      <button onClick={() => zmenitPocet(item.produkt.id, 1)} style={{ backgroundColor: "#334155", color: "white", border: "none", width: "30px", height: "30px", borderRadius: "6px", cursor: "pointer" }}>+</button>
                     </div>
                   </div>
                 ))}
 
-                <div style={{ marginTop: "20px", textAlign: "right" }}>
-                  <h3>Celková cena: <span style={{ color: "#10b981" }}>{celkovaCena} Kč</span></h3>
+                {/* SUMÁŘ A SIMULACE PLATEBNÍ BRÁNY */}
+                <div style={{ marginTop: "30px", borderTop: "2px solid #334155", paddingTop: "20px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px" }}>
+                    <span style={{ fontSize: "20px", color: "#94a3b8" }}>Celkem k úhradě:</span>
+                    <span style={{ fontSize: "28px", fontWeight: "800", color: "#38bdf8" }}>{celkovaCena} Kč</span>
+                  </div>
+
+                  <div style={{ backgroundColor: "#0f172a", padding: "20px", borderRadius: "12px", marginBottom: "20px", border: "1px solid #334155" }}>
+                    <h4 style={{ margin: "0 0 10px 0", color: "#94a3b8" }}>Simulace platební brány</h4>
+                    <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Kliknutím na tlačítko níže nasimulujete dokončení transakce.</p>
+                  </div>
+
                   <button
-                    onClick={() => alert("Objednávka byla odeslána!")}
-                    style={{ backgroundColor: "#10b981", color: "white", border: "none", padding: "12px 24px", borderRadius: "6px", fontSize: "16px", fontWeight: "bold", cursor: "pointer" }}
+                    onClick={zaplatit}
+                    disabled={platbaProbehla}
+                    style={{
+                      width: "100%",
+                      padding: "16px",
+                      backgroundColor: platbaProbehla ? "#10b981" : "#10b981",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "12px",
+                      fontSize: "18px",
+                      fontWeight: "800",
+                      cursor: "pointer",
+                    }}
                   >
-                    Odeslat objednávku
+                    {platbaProbehla ? "Zpracovávám platbu..." : "Zaplatit kartou"}
                   </button>
                 </div>
               </div>
