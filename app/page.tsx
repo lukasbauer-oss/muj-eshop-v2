@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 
+type KategorieTyp = "vse" | "obleceni" | "elektronika" | "gadgety";
+
 type Produkt = {
   id: number;
   nazev: string;
@@ -17,7 +19,7 @@ type KosikPolozka = {
 
 export default function Home() {
   const [zalozka, setZalozka] = useState<"obchod" | "kosik">("obchod");
-  const [kategorie, setKategorie] = useState<"vse" | "obleceni" | "elektronika" | "gadgety">("vse");
+  const [kategorie, setKategorie] = useState<KategorieTyp>("vse");
   const [kosik, setKosik] = useState<KosikPolozka[]>([]);
   const [animovanyId, setAnimovanyId] = useState<number | null>(null);
   const [platbaProbehla, setPlatbaProbehla] = useState(false);
@@ -56,7 +58,7 @@ export default function Home() {
           }
           return p;
         })
-        .filter(Boolean) as KosikPolozka[]
+        .filter((p): p is KosikPolozka => p !== null)
     );
   };
 
@@ -77,6 +79,13 @@ export default function Home() {
     }, 1500);
   };
 
+  const kategorieSeznam: { id: KategorieTyp; label: string }[] = [
+    { id: "vse", label: "Všechny produkty" },
+    { id: "obleceni", label: "👕 Oblečení" },
+    { id: "elektronika", label: "🎧 Elektronika" },
+    { id: "gadgety", label: "🚁 Gadgety" },
+  ];
+
   return (
     <div style={{ fontFamily: "'Inter', system-ui, sans-serif", backgroundColor: "#0f172a", color: "#f8fafc", minHeight: "100vh", margin: 0 }}>
       <style>{`
@@ -93,7 +102,7 @@ export default function Home() {
       `}</style>
 
       {/* HEADER */}
-      <header style={{ backgroundColor: "#1e293b", borderBottom: "1px solid #334155", padding: "18px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", sticky: "top", position: "sticky", top: 0, zIndex: 100 }}>
+      <header style={{ backgroundColor: "#1e293b", borderBottom: "1px solid #334155", padding: "18px 40px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 100 }}>
         <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "800", background: "linear-gradient(to right, #3b82f6, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
           Obchod pro tebe
         </h1>
@@ -113,15 +122,10 @@ export default function Home() {
           <div>
             {/* KATEGORIE ZÁLOŽKY */}
             <div style={{ display: "flex", gap: "10px", marginBottom: "30px", flexWrap: "wrap" }}>
-              {[
-                { id: "vse", label: "Všechny produkty" },
-                { id: "obleceni", label: "👕 Oblečení" },
-                { id: "elektronika", label: "🎧 Elektronika" },
-                { id: "gadgety", label: "🚁 Gadgety" },
-              ].map((kat) => (
+              {kategorieSeznam.map((kat) => (
                 <button
                   key={kat.id}
-                  onClick={() => setKategorie(kat.id as any)}
+                  onClick={() => setKategorie(kat.id)}
                   style={{
                     backgroundColor: kategorie === kat.id ? "#3b82f6" : "#1e293b",
                     color: kategorie === kat.id ? "white" : "#94a3b8",
@@ -197,16 +201,10 @@ export default function Home() {
                   </div>
                 ))}
 
-                {/* SUMÁŘ A SIMULACE PLATEBNÍ BRÁNY */}
                 <div style={{ marginTop: "30px", borderTop: "2px solid #334155", paddingTop: "20px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px" }}>
                     <span style={{ fontSize: "20px", color: "#94a3b8" }}>Celkem k úhradě:</span>
                     <span style={{ fontSize: "28px", fontWeight: "800", color: "#38bdf8" }}>{celkovaCena} Kč</span>
-                  </div>
-
-                  <div style={{ backgroundColor: "#0f172a", padding: "20px", borderRadius: "12px", marginBottom: "20px", border: "1px solid #334155" }}>
-                    <h4 style={{ margin: "0 0 10px 0", color: "#94a3b8" }}>Simulace platební brány</h4>
-                    <p style={{ fontSize: "13px", color: "#64748b", margin: 0 }}>Kliknutím na tlačítko níže nasimulujete dokončení transakce.</p>
                   </div>
 
                   <button
@@ -215,7 +213,7 @@ export default function Home() {
                     style={{
                       width: "100%",
                       padding: "16px",
-                      backgroundColor: platbaProbehla ? "#10b981" : "#10b981",
+                      backgroundColor: "#10b981",
                       color: "white",
                       border: "none",
                       borderRadius: "12px",
