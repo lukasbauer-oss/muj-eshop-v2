@@ -116,7 +116,7 @@ export default function Eshop() {
   const celkem = cenaZbozi + cenaDopravy;
 
   const prehledObjednavky = kosik.map(p => `${p.mnozstvi}x ${p.produkt.nazev} (${p.varianta.nazev}) - ${(p.mnozstvi * p.varianta.cena).toFixed(2)} Kč`).join('\n');
-  const styleVstupu = { width: "100%", padding: "16px", marginBottom: "16px", border: "1px solid #eaeaea", fontSize: "16px", boxSizing: "border-box" as const };
+  const styleVstupu = { width: "100%", padding: "16px", marginBottom: "16px", border: "1px solid #eaeaea", fontSize: "16px", boxSizing: "box-sizing" as const };
 
   return (
     <div style={{ fontFamily: "system-ui, -apple-system, sans-serif", color: "#000", backgroundColor: "#fff", minHeight: "100vh" }}>
@@ -223,15 +223,15 @@ export default function Eshop() {
                   )}
 
                   <h3 style={{ fontSize: "18px", marginBottom: "16px", fontWeight: "700" }}>Kontaktní údaje</h3>
-                  <div style={{ marginBottom: "40px" }}>
-                    <input type="text" name="Jméno" placeholder="Jméno a příjmení" required style={styleVstupu} />
-                    <input type="email" name="Email" placeholder="E-mail" required style={styleVstupu} />
+                  <div style={{ marginBottom: "30px" }}>
+                    <input type="text" name="Jméno" placeholder="Jméno a příjmení *" required style={styleVstupu} />
+                    <input type="email" name="Email" placeholder="E-mail *" required style={styleVstupu} />
                     <ValidationError prefix="Email" field="Email" errors={formState.errors} />
-                    <input type="tel" name="Telefon" placeholder="Telefon (např. +420 123 456 789)" required style={styleVstupu} />
+                    <input type="tel" name="Telefon" placeholder="Telefon (např. +420 123 456 789) *" required style={styleVstupu} />
                   </div>
 
                   <h3 style={{ fontSize: "18px", marginBottom: "16px", fontWeight: "700" }}>Doprava</h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "30px" }}>
                     <label style={{ display: "flex", justifyContent: "space-between", padding: "20px", border: doprava === "zasilkovna" ? "2px solid #000" : "1px solid #eaeaea", cursor: "pointer", backgroundColor: doprava === "zasilkovna" ? "#fafafa" : "#fff" }}>
                       <span style={{ fontWeight: "600" }}>
                         <input type="radio" name="Doprava" value="Zásilkovna (79 Kč)" required onChange={() => { setDoprava("zasilkovna"); setVybranaPobocka(null); }} style={{ marginRight: "12px" }}/>
@@ -261,6 +261,18 @@ export default function Eshop() {
                       </span>
                       <span style={{ fontWeight: "600" }}>99 Kč</span>
                     </label>
+
+                    {/* Pokud je vybraný kurýr, zobrazíme povinná políčka pro adresu */}
+                    {doprava === "kuryr" && (
+                      <div style={{ padding: "20px", backgroundColor: "#f9f9f9", border: "1px solid #eaeaea", marginTop: "4px" }}>
+                        <h4 style={{ fontSize: "15px", margin: "0 0 16px 0", fontWeight: "700" }}>Doručovací adresa</h4>
+                        <input type="text" name="Ulice_a_čp" placeholder="Ulice a číslo popisné *" required={doprava === "kuryr"} style={styleVstupu} />
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                          <input type="text" name="Město" placeholder="Město *" required={doprava === "kuryr"} style={{ ...styleVstupu, marginBottom: 0 }} />
+                          <input type="text" name="PSC" placeholder="PSČ *" required={doprava === "kuryr"} style={{ ...styleVstupu, marginBottom: 0 }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ borderTop: "2px solid #000", paddingTop: "24px", marginBottom: "32px", display: "flex", justifyContent: "space-between", fontSize: "20px", fontWeight: "800" }}>
