@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, CSSProperties } from "react";
 import { useForm, ValidationError } from '@formspree/react';
 import Script from "next/script";
 
@@ -116,7 +116,15 @@ export default function Eshop() {
   const celkem = cenaZbozi + cenaDopravy;
 
   const prehledObjednavky = kosik.map(p => `${p.mnozstvi}x ${p.produkt.nazev} (${p.varianta.nazev}) - ${(p.mnozstvi * p.varianta.cena).toFixed(2)} Kč`).join('\n');
-  const styleVstupu = { width: "100%", padding: "16px", marginBottom: "16px", border: "1px solid #eaeaea", fontSize: "16px", boxSizing: "box-sizing" as const };
+  
+  const styleVstupu: CSSProperties = { 
+    width: "100%", 
+    padding: "16px", 
+    marginBottom: "16px", 
+    border: "1px solid #eaeaea", 
+    fontSize: "16px", 
+    boxSizing: "border-box" 
+  };
 
   return (
     <div style={{ fontFamily: "system-ui, -apple-system, sans-serif", color: "#000", backgroundColor: "#fff", minHeight: "100vh" }}>
@@ -136,7 +144,7 @@ export default function Eshop() {
             {produkty.map((p) => (
               <div key={p.id} style={{ cursor: "pointer" }} onClick={() => otevritDetail(p)}>
                 <div style={{ backgroundColor: "#f5f5f7", aspectRatio: "1/1", overflow: "hidden", marginBottom: "16px" }}>
-                  <img src={p.obrazek} alt={p.nazev} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s ease" }} onMouseOver={e => e.currentTarget.style.transform = "scale(1.05)"} onMouseOut={e => e.currentTarget.style.transform = "scale(1)"} />
+                  <img src={p.obrazek} alt={p.nazev} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.3s ease" }} />
                 </div>
                 <h2 style={{ fontSize: "16px", fontWeight: "600", margin: "0 0 4px 0" }}>{p.nazev}</h2>
                 <p style={{ margin: 0, color: "#666", fontSize: "15px" }}>Od {Math.min(...p.varianty.map(v => v.cena)).toFixed(2).replace('.', ',')} Kč</p>
