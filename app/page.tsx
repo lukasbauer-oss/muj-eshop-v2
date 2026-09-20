@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useForm, ValidationError } from '@formspree/react';
+import Script from "next/script";
 
 type Varianta = {
   id: string;
@@ -24,8 +25,14 @@ type PolozkaKosiku = {
   mnozstvi: number;
 };
 
+// Pomocná deklarace pro TypeScript, aby věděl o widgetu Zásilkovny
+declare global {
+  interface Window {
+    Packeta: any;
+  }
+}
+
 export default function Eshop() {
-  // 1. Inicializace Formspree s tvým ID
   const [formState, handleSubmit] = useForm('mnpnjdyw');
 
   const [pohled, setPohled] = useState<"obchod" | "detail" | "kosik">("obchod");
@@ -33,8 +40,27 @@ export default function Eshop() {
   const [vybranaVarianta, setVybranaVarianta] = useState<Varianta | null>(null);
   const [kosik, setKosik] = useState<PolozkaKosiku[]>([]);
   const [doprava, setDoprava] = useState<"zasilkovna" | "kuryr" | null>(null);
+  
+  // Stav pro uložení vybrané pobočky Zásilkovny
+  const [vybranaPobocka, setVybranaPobocka] = useState<any>(null);
 
-  // Zobrazení po úspěšném odeslání objednávky
+  // Funkce pro otevření mapy Zásilkovny
+  const otevriMapuZasilkovny = () => {
+    // Zde můžeš později nahradit svým reálným API klíčem ze Zásilkovny, 
+    // pro testování funguje i výchozí demo klíč níže:
+    const apiKey = "1234567890abcdef"; 
+
+    if (window.Packeta && window.Packeta.Widget) {
+      window.Packeta.Widget.pick(apiKey, (point: any) => {
+        if (point) {
+          setVybranaPobocka(point);
+        }
+      }, { country: "cz", language: "cs" });
+    } else {
+      alert("Mapa Zásilkovny se ještě načítá, zkuste to za chvíli prosím znovu.");
+    }
+  };
+
   if (formState.succeeded) {
     return (
       <div style={{ fontFamily: "system-ui, -apple-system, sans-serif", textAlign: "center", padding: "120px 20px", color: "#000" }}>
@@ -50,7 +76,6 @@ export default function Eshop() {
     );
   }
 
-  // TVOJE PRODUKTY
   const produkty: Produkt[] = [
     {
       id: "wc-kartac-01",
@@ -92,12 +117,14 @@ export default function Eshop() {
   const cenaDopravy = doprava === "zasilkovna" ? 79 : doprava === "kuryr" ? 99 : 0;
   const celkem = cenaZbozi + cenaDopravy;
 
-  // Generování soupisu pro e-mail a sdílený styl formuláře
   const prehledObjednavky = kosik.map(p => `${p.mnozstvi}x ${p.produkt.nazev} (${p.varianta.nazev}) - ${(p.mnozstvi * p.varianta.cena).toFixed(2)} Kč`).join('\n');
   const styleVstupu = { width: "100%", padding: "16px", marginBottom: "16px", border: "1px solid #eaeaea", fontSize: "16px", boxSizing: "border-box" as const };
 
   return (
     <div style={{ fontFamily: "system-ui, -apple-system, sans-serif", color: "#000", backgroundColor: "#fff", minHeight: "100vh" }}>
+
+      {/* Načtení skriptu widgetu Zásilkovny */}
+      <Script src="https://widget.packeta.com/v6/www/js/library.js" strategy="lazyOnload" />
 
       <header style={{ display: "flex", justifyContent: "space-between", padding: "24px 40px", borderBottom: "1px solid #eaeaea", position: "sticky", top: 0, backgroundColor: "#fff", zIndex: 10 }}>
         <button onClick={() => setPohled("obchod")} style={{ background: "none", border: "none", fontSize: "20px", fontWeight: "800", cursor: "pointer", letterSpacing: "-0.5px" }}>LUKAS / SUPPLY</button>
@@ -188,9 +215,14 @@ export default function Eshop() {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                  {/* Skrytá data košíku, která pošle Formspree do tvého e-mailu */}
+                  {/* Skrytá data košíku pro Formspree */}
                   <input type="hidden" name="Objednané_zboží" value={prehledObjednavky} />
                   <input type="hidden" name="Celková_cena" value={`${celkem.toFixed(2).replace('.', ',')} Kč`} />
+                  
+                  {/* Skryté pole pro vybranou pobočku Zásilkovny */}
+                  {vybranaPobocka && (
+                    <input type="hidden" name="Vybraná_pobočka_Zásilkovny" value={`${vybranaPobocka.name} (${vybranaPobocka.nameStreet}, ID: ${vybranaPobocka.id})`} />
+                  )}
 
                   <h3 style={{ fontSize: "18px", marginBottom: "16px", fontWeight: "700" }}>Kontaktní údaje</h3>
                   <div style={{ marginBottom: "40px" }}>
@@ -201,17 +233,32 @@ export default function Eshop() {
                   </div>
 
                   <h3 style={{ fontSize: "18px", marginBottom: "16px", fontWeight: "700" }}>Doprava</h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "40px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "20px" }}>
                     <label style={{ display: "flex", justifyContent: "space-between", padding: "20px", border: doprava === "zasilkovna" ? "2px solid #000" : "1px solid #eaeaea", cursor: "pointer", backgroundColor: doprava === "zasilkovna" ? "#fafafa" : "#fff" }}>
                       <span style={{ fontWeight: "600" }}>
-                        <input type="radio" name="Doprava" value="Zásilkovna (79 Kč)" required onChange={() => setDoprava("zasilkovna")} style={{ marginRight: "12px" }}/>
+                        <input type="radio" name="Doprava" value="Zásilkovna (79 Kč)" required onChange={() => { setDoprava("zasilkovna"); setVybranaPobocka(null); }} style={{ marginRight: "12px" }}/>
                         Zásilkovna
                       </span>
                       <span style={{ fontWeight: "600" }}>79 Kč</span>
                     </label>
+
+                    {/* Pokud je vybraná Zásilkovna, zobrazíme tlačítko pro výběr pobočky z mapy */}
+                    {doprava === "zasilkovna" && (
+                      <div style={{ padding: "16px", backgroundColor: "#f9f9f9", border: "1px dashed #ccc", marginBottom: "12px" }}>
+                        <button type="button" onClick={otevriMapuZasilkovny} style={{ width: "100%", padding: "12px", backgroundColor: "#333", color: "#fff", border: "none", fontWeight: "600", cursor: "pointer" }}>
+                          {vybranaPobocka ? "Změnit pobočku Zásilkovny" : "Vybrat pobočku na mapě 🗺️"}
+                        </button>
+                        {vybranaPobocka && (
+                          <p style={{ marginTop: "12px", fontSize: "14px", color: "#333", fontWeight: "500" }}>
+                            ✅ Vybráno: <strong>{vybranaPobocka.name}</strong> ({vybranaPobocka.nameStreet})
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <label style={{ display: "flex", justifyContent: "space-between", padding: "20px", border: doprava === "kuryr" ? "2px solid #000" : "1px solid #eaeaea", cursor: "pointer", backgroundColor: doprava === "kuryr" ? "#fafafa" : "#fff" }}>
                       <span style={{ fontWeight: "600" }}>
-                        <input type="radio" name="Doprava" value="Kurýr na adresu (99 Kč)" required onChange={() => setDoprava("kuryr")} style={{ marginRight: "12px" }}/>
+                        <input type="radio" name="Doprava" value="Kurýr na adresu (99 Kč)" required onChange={() => { setDoprava("kuryr"); setVybranaPobocka(null); }} style={{ marginRight: "12px" }}/>
                         Kurýr na adresu
                       </span>
                       <span style={{ fontWeight: "600" }}>99 Kč</span>
@@ -225,10 +272,19 @@ export default function Eshop() {
 
                   <button 
                     type="submit"
-                    disabled={formState.submitting}
-                    style={{ width: "100%", padding: "20px", backgroundColor: formState.submitting ? "#666" : "#000", color: "#fff", border: "none", fontSize: "16px", fontWeight: "700", cursor: formState.submitting ? "not-allowed" : "pointer" }}
+                    disabled={formState.submitting || (doprava === "zasilkovna" && !vybranaPobocka)}
+                    style={{ 
+                      width: "100%", 
+                      padding: "20px", 
+                      backgroundColor: (doprava === "zasilkovna" && !vybranaPobocka) ? "#ccc" : (formState.submitting ? "#666" : "#000"), 
+                      color: "#fff", 
+                      border: "none", 
+                      fontSize: "16px", 
+                      fontWeight: "700", 
+                      cursor: (doprava === "zasilkovna" && !vybranaPobocka) ? "not-allowed" : "pointer" 
+                    }}
                   >
-                    {formState.submitting ? "ODESÍLÁM..." : "ODESLAT OBJEDNÁVKU (ZÁVAZNĚ)"}
+                    {doprava === "zasilkovna" && !vybranaPobocka ? "NEJPRVE VYBERTE POBOČKU ZÁSILKOVNY" : (formState.submitting ? "ODESÍLÁM..." : "ODESLAT OBJEDNÁVKU (ZÁVAZNĚ)")}
                   </button>
                   <ValidationError errors={formState.errors} />
                 </form>
