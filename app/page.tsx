@@ -44,11 +44,9 @@ export default function Eshop() {
   // Stav pro uložení vybrané pobočky Zásilkovny
   const [vybranaPobocka, setVybranaPobocka] = useState<any>(null);
 
-  // Funkce pro otevření mapy Zásilkovny
+  // Funkce pro otevření mapy Zásilkovny s tvým reálným API klíčem
   const otevriMapuZasilkovny = () => {
-    // Zde můžeš později nahradit svým reálným API klíčem ze Zásilkovny, 
-    // pro testování funguje i výchozí demo klíč níže:
-    const apiKey = "1234567890abcdef"; 
+    const apiKey = "5d994a8aee4a582b"; 
 
     if (window.Packeta && window.Packeta.Widget) {
       window.Packeta.Widget.pick(apiKey, (point: any) => {
